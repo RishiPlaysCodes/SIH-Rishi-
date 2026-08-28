@@ -1,0 +1,24 @@
+# Exfiltration scenario: a compromised host opens a ramping high-byte-rate
+# channel to a server. This is deliberately subtler than lateral movement — the
+# forecaster catches it only once the volume becomes sufficiently anomalous, so
+# recall is lower. Reported honestly rather than tuned away.
+#
+#   python -m sentinelx.cli run --config configs/exfiltration.yaml
+
+experiment:
+  name: sentinelx-exfiltration
+  dataset: synthetic
+  model_type: linear_transition
+  seed: 1337
+
+data:
+  num_windows: 40
+  window_seconds: 60
+  num_hosts: 18
+  num_servers: 4
+  attack_start_window: 30
+  attack_type: exfiltration
+  test_fraction: 0.3
+
+forecast:
+  horizon: 5    # extended horizon to watch the channel ramp
