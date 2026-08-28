@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinelx"
+version = "0.1.0"
+description = "Sentinel-X: Predictive Network Behavior & Threat Forecasting Platform"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Sentinel-X" }]
+keywords = ["security", "graph", "forecasting", "anomaly-detection", "gnn"]
+
+# NOTE: The runnable reference implementation in this repository intentionally
+# depends on the Python standard library ONLY, so it runs and is fully tested in
+# any environment (including offline sandboxes). The heavyweight research stack
+# (PyTorch, PyTorch Geometric, FastAPI, pandas, NetworkX, ...) is listed in
+# requirements-full.txt and slots in behind the interfaces in sentinelx/ without
+# a redesign. See README.md ("Runs now vs. framework swap-in").
+dependencies = []
+
+[project.optional-dependencies]
+# Installed with:  pip install -e ".[full]"   (requires network access)
+full = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "networkx>=3.2",
+    "torch>=2.2",
+    "torch-geometric>=2.5",
+    "scikit-learn>=1.4",
+    "mlflow>=2.11",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "pydantic>=2.6",
+    "scapy>=2.5",
+    "ruamel.yaml>=0.18",
+]
+dev = ["pytest>=8", "ruff", "black", "mypy"]
+
+[project.scripts]
+sentinelx = "sentinelx.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sentinelx*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100

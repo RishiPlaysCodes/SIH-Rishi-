@@ -1,0 +1,64 @@
+# Sentinel-X default experiment configuration.
+# Every value here overrides sentinelx.config.DEFAULT_CONFIG. A run is fully
+# reproducible from this file + the seed, and the snapshot is stored in SQLite.
+#
+#   python -m sentinelx.cli run --config configs/default.yaml
+
+experiment:
+  name: sentinelx-default
+  dataset: synthetic          # 'synthetic' or a path to a CIC-IDS2018 CSV
+  model_type: linear_transition   # persistence | ewma | linear_transition
+  seed: 1337
+
+data:
+  num_windows: 40
+  window_seconds: 60
+  num_hosts: 18
+  num_servers: 4
+  attack_start_window: 30     # lands in the test region (boundary = 28)
+  attack_type: lateral_movement   # lateral_movement | exfiltration
+  test_fraction: 0.3
+
+graph:
+  min_edge_weight: 1.0
+  directed: true
+
+model:
+  ridge_lambda: 0.05
+  ewma_alpha: 0.4
+
+forecast:
+  horizon: 3
+
+deviation:
+  weights:
+    feature: 0.5
+    node_state: 0.18
+    temporal: 0.15
+    structural: 0.1
+    edge_state: 0.07
+  anomaly_threshold: 0.45
+  deviating_threshold: 0.25
+
+uncertainty:
+  num_passes: 30
+  dropout: 0.2
+  low_sigma: 0.3
+  high_sigma: 0.5
+
+novelty:
+  unusual: 0.4
+  emerging: 0.6
+  unknown: 0.8
+
+stability:
+  perturbation: 0.03
+  num_trials: 12
+  unstable_threshold: 0.12
+
+api:
+  host: 127.0.0.1
+  port: 8787
+
+persistence:
+  db_path: sentinelx.db

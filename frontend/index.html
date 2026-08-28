@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentinel-X — Predictive Threat Forecasting</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◈</span>
+      <div>
+        <h1>SENTINEL-X</h1>
+        <p class="tagline">Not just detecting what happened — forecasting what happens next.</p>
+      </div>
+    </div>
+    <div class="status-cluster" id="summary-cluster">
+      <div class="stat"><span class="stat-label">MODEL</span><span class="stat-value" id="stat-model">—</span></div>
+      <div class="stat"><span class="stat-label">PRECISION</span><span class="stat-value" id="stat-precision">—</span></div>
+      <div class="stat"><span class="stat-label">RECALL</span><span class="stat-value" id="stat-recall">—</span></div>
+      <div class="stat"><span class="stat-label">WINDOWS</span><span class="stat-value" id="stat-windows">—</span></div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="network">Network</button>
+    <button class="tab" data-view="forecast">Forecast</button>
+    <button class="tab" data-view="uncertainty">Uncertainty</button>
+    <button class="tab" data-view="propagation">Propagation</button>
+    <button class="tab" data-view="counterfactual">Counterfactual</button>
+    <button class="tab" data-view="chronicle">CyberChronicle</button>
+  </nav>
+
+  <div class="scrubber">
+    <label>Time window <b id="window-label">—</b></label>
+    <input type="range" id="window-slider" min="0" max="0" value="0" />
+    <div class="legend">
+      <span class="dot normal"></span> normal
+      <span class="dot deviating"></span> deviating
+      <span class="dot anomalous"></span> anomalous
+      <span class="dot server"></span> server
+    </div>
+  </div>
+
+  <main id="views">
+    <!-- NETWORK -->
+    <section class="view active" data-view="network">
+      <div class="split">
+        <div class="graph-wrap"><svg id="network-graph"></svg></div>
+        <aside class="panel">
+          <h3>Node inspector</h3>
+          <p class="hint" id="node-hint">Click a node to inspect its features.</p>
+          <div id="node-detail"></div>
+          <h3 class="mt">Top deviations (this window)</h3>
+          <ul id="anomaly-list" class="metric-list"></ul>
+        </aside>
+      </div>
+    </section>
+
+    <!-- FORECAST -->
+    <section class="view" data-view="forecast">
+      <div class="split">
+        <div class="graph-wrap"><svg id="forecast-graph"></svg></div>
+        <aside class="panel">
+          <h3>K-step forecast</h3>
+          <div class="horizon-tabs" id="horizon-tabs"></div>
+          <div id="forecast-detail"></div>
+          <p class="caveat">Confidence bands widen with the horizon. Every forecast is
+          reported with its uncertainty, never as a bare point estimate.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- UNCERTAINTY -->
+    <section class="view" data-view="uncertainty">
+      <div class="panel wide">
+        <h3>Forecast uncertainty over the horizon (MC-Dropout)</h3>
+        <svg id="uncertainty-chart"></svg>
+        <p class="caveat">Shaded band = ±1σ across stochastic forward passes. Growing
+        width means the model is less sure the further ahead it predicts.</p>
+      </div>
+    </section>
+
+    <!-- PROPAGATION -->
+    <section class="view" data-view="propagation">
+      <div class="split">
+        <div class="graph-wrap"><svg id="propagation-graph"></svg></div>
+        <aside class="panel">
+          <h3>Cyber-epidemiology</h3>
+          <ul id="propagation-metrics" class="metric-list"></ul>
+          <p class="caveat">Propagation metrics are reported descriptively; they are
+          kept only where ablations show they measurably help.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- COUNTERFACTUAL -->
+    <section class="view" data-view="counterfactual">
+      <div class="panel wide">
+        <h3>What-if intervention simulator</h3>
+        <div class="controls">
+          <label>Action
+            <select id="cf-action">
+              <option>ISOLATE_NODE</option>
+              <option>DISABLE_COMMUNICATION</option>
+              <option>BLOCK_PORT</option>
+              <option>RATE_LIMIT</option>
+            </select>
+          </label>
+          <label>Target node
+            <select id="cf-target"></select>
+          </label>
+          <label>Port (BLOCK_PORT)
+            <input type="number" id="cf-port" value="445" />
+          </label>
+          <button id="cf-run" class="primary">Simulate</button>
+        </div>
+        <table class="cf-table">
+          <thead><tr><th>Metric</th><th>Before</th><th>After</th><th>Δ</th></tr></thead>
+          <tbody id="cf-body"><tr><td colspan="4" class="hint">Run a simulation to compare.</td></tr></tbody>
+        </table>
+        <p class="caveat">Interventions are evaluated over the world model's forecast:
+        ΔRisk = Risk(before) − Risk(after). Isolating a source early is far more
+        effective than after the infection has spread.</p>
+      </div>
+    </section>
+
+    <!-- CHRONICLE -->
+    <section class="view" data-view="chronicle">
+      <div class="panel wide">
+        <h3>CyberChronicle — incident narrative</h3>
+        <ul id="chronicle-feed" class="chronicle"></ul>
+        <p class="caveat">Narratives are deterministic templates over structured
+        signals — no AI-generated text is treated as ground-truth security judgment.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+</body>
+</html>

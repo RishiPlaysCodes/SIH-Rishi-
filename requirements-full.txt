@@ -1,0 +1,37 @@
+# Heavyweight research/production stack for Sentinel-X.
+#
+# The reference implementation in sentinelx/ runs on the Python STANDARD LIBRARY
+# ONLY and requires none of the below. These packages are the documented
+# "framework swap-in": they replace the pure-python numeric/model/API/frontend
+# shims behind the same interfaces once network access is available.
+#
+#   pip install -r requirements-full.txt
+#
+# --- numerical / data ---
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+scikit-learn>=1.4
+
+# --- graph + deep learning world model ---
+networkx>=3.2
+torch>=2.2
+torch-geometric>=2.5
+
+# --- packet ingestion ---
+scapy>=2.5
+
+# --- experiment tracking / config ---
+mlflow>=2.11
+ruamel.yaml>=0.18
+
+# --- serving ---
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+
+# --- testing / tooling ---
+pytest>=8
+ruff
+black
+mypy
