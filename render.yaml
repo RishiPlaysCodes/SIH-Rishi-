@@ -1,0 +1,15 @@
+# One-click free deploy on Render (https://render.com).
+# Render reads this Blueprint automatically: New + → Blueprint → pick this repo.
+# The service is 100% standard library, so there is nothing to install.
+services:
+  - type: web
+    name: sentinel-x
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: "python -m compileall sentinelx"
+    startCommand: "python -m sentinelx.cli serve"
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"

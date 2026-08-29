@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 
@@ -66,8 +67,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "serve":
         from sentinelx.api.server import serve
 
-        host = args.host or service.config.get("api.host", "127.0.0.1")
-        port = args.port or int(service.config.get("api.port", 8787))
+        # Deployment-friendly binding: honour $PORT/$HOST (Render, Railway,
+        # Fly, Cloud Run, Hugging Face Spaces, etc.) and default to 0.0.0.0 so
+        # the service is reachable, falling back to the config for local runs.
+        host = args.host or os.environ.get("HOST") or (
+            "0.0.0.0" if os.environ.get("PORT") else service.config.get("api.host", "127.0.0.1")
+        )
+        port = args.port or int(os.environ.get("PORT") or service.config.get("api.port", 8787))
         serve(service, host=host, port=port)
         return 0
 
