@@ -13,7 +13,7 @@ Each :class:`WindowSlice` becomes one :class:`GraphState`:
 from __future__ import annotations
 
 from collections import Counter
-from typing import Dict, List, Sequence, Tuple
+from collections.abc import Sequence
 
 from sentinelx.data.features import WindowSlice, build_windows, window_node_features
 from sentinelx.data.schema import EDGE_FEATURES, NODE_FEATURES, FlowRecord
@@ -23,14 +23,12 @@ _SERVER_FANIN_THRESHOLD = 5
 
 
 def _detect_servers(flows: Sequence[FlowRecord], nodes: Sequence[str]) -> set[str]:
-    fan_in: Dict[str, set] = {n: set() for n in nodes}
+    fan_in: dict[str, set] = {n: set() for n in nodes}
     for f in flows:
         fan_in.setdefault(f.dst, set()).add(f.src)
     servers = set()
     for n in nodes:
-        if n.upper().startswith("SERVER"):
-            servers.add(n)
-        elif len(fan_in.get(n, set())) >= _SERVER_FANIN_THRESHOLD:
+        if n.upper().startswith("SERVER") or len(fan_in.get(n, set())) >= _SERVER_FANIN_THRESHOLD:
             servers.add(n)
     return servers
 
@@ -57,7 +55,7 @@ def build_graph_state(window: WindowSlice, min_edge_weight: float = 1.0) -> Grap
         )
 
     # Aggregate flows into directed edges.
-    agg: Dict[Tuple[str, str], Dict] = {}
+    agg: dict[tuple[str, str], dict] = {}
     for f in window.flows:
         key = (f.src, f.dst)
         bucket = agg.setdefault(
@@ -95,6 +93,6 @@ def build_graph_state(window: WindowSlice, min_edge_weight: float = 1.0) -> Grap
 
 def build_graph_sequence(
     flows: Sequence[FlowRecord], window_seconds: int, min_edge_weight: float = 1.0
-) -> List[GraphState]:
+) -> list[GraphState]:
     windows = build_windows(flows, window_seconds)
     return [build_graph_state(w, min_edge_weight=min_edge_weight) for w in windows]

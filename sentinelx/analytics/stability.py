@@ -10,8 +10,8 @@ STABLE / UNSTABLE label.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Sequence
 
 from sentinelx.graph.types import GraphState
 from sentinelx.linalg import euclidean
@@ -59,7 +59,7 @@ def assess_stability(
     rng = rng or Rng(0)
     baseline = model.predict_next(history)
 
-    deltas: List[float] = []
+    deltas: list[float] = []
     for t in range(num_trials):
         trial_rng = rng.spawn(f"stab-{t}")
         perturbed_last = _perturb(history[-1], perturbation, trial_rng)

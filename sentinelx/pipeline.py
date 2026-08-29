@@ -20,7 +20,7 @@ incidents, propagation).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sentinelx.analytics import (
     NoveltyScorer,
@@ -29,12 +29,11 @@ from sentinelx.analytics import (
     estimate_uncertainty,
 )
 from sentinelx.analytics.counterfactual import Intervention, run_counterfactual
-from sentinelx.analytics.explain import feature_contributions, top_feature_names
+from sentinelx.analytics.explain import top_feature_names
 from sentinelx.analytics.mitre import map_mitre_stage
 from sentinelx.config import Config, load_config
 from sentinelx.data import (
     Normalizer,
-    build_windows,
     clean_flows,
     generate_synthetic_flows,
     load_cic_ids_csv,
@@ -61,20 +60,20 @@ class SentinelService:
 
     config: Config
     experiment_id: int
-    graphs: List[GraphState]
+    graphs: list[GraphState]
     model: WorldModel
     engine: ForecastEngine
     novelty: NoveltyScorer
     normalizer: Normalizer
-    devs: List[DeviationResult]
-    dev_by_index: Dict[int, DeviationResult]
+    devs: list[DeviationResult]
+    dev_by_index: dict[int, DeviationResult]
     window_seconds: float
-    summary: Dict[str, Any]
+    summary: dict[str, Any]
     repo: Repository
-    feature_names: List[str] = field(default_factory=list)
+    feature_names: list[str] = field(default_factory=list)
 
     # ---- live queries used by the API ------------------------------------ #
-    def network_state(self, window: Optional[int] = None) -> Dict[str, Any]:
+    def network_state(self, window: int | None = None) -> dict[str, Any]:
         idx = self._resolve_window(window)
         graph = self.graphs[idx]
         dev = self.dev_by_index.get(idx)
@@ -99,7 +98,7 @@ class SentinelService:
         state["num_windows"] = len(self.graphs)
         return state
 
-    def forecast(self, window: Optional[int] = None, k: Optional[int] = None) -> Dict[str, Any]:
+    def forecast(self, window: int | None = None, k: int | None = None) -> dict[str, Any]:
         idx = self._resolve_window(window)
         k = k or int(self.config.get("forecast.horizon", 3))
         history = self.graphs[: idx + 1]
@@ -129,7 +128,7 @@ class SentinelService:
             history = list(history) + [g]
         return {"window": idx, "horizon": k, "steps": steps}
 
-    def uncertainty(self, window: Optional[int] = None) -> Dict[str, Any]:
+    def uncertainty(self, window: int | None = None) -> dict[str, Any]:
         idx = self._resolve_window(window)
         history = self.graphs[: idx + 1]
         rng = Rng(self.config.seed).spawn(f"unc-{idx}")
@@ -150,7 +149,7 @@ class SentinelService:
             "per_node_sigma": result.per_node_sigma,
         }
 
-    def propagation(self) -> Dict[str, Any]:
+    def propagation(self) -> dict[str, Any]:
         events = compute_propagation(self.graphs, self.dev_by_index, self.window_seconds)
         return {
             "events": [
@@ -169,12 +168,12 @@ class SentinelService:
     def counterfactual(
         self,
         action_type: str,
-        window: Optional[int] = None,
-        target_node: Optional[str] = None,
-        target_edge: Optional[List[str]] = None,
-        port: Optional[int] = None,
+        window: int | None = None,
+        target_node: str | None = None,
+        target_edge: list[str] | None = None,
+        port: int | None = None,
         rate_factor: float = 0.2,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         idx = self._resolve_window(window)
         history = self.graphs[: idx + 1]
         dev = self.dev_by_index.get(idx)
@@ -211,10 +210,10 @@ class SentinelService:
             "components_after": cf.components_after,
         }
 
-    def incidents(self) -> Dict[str, Any]:
+    def incidents(self) -> dict[str, Any]:
         return {"incidents": self.repo.get_incidents(self.experiment_id)}
 
-    def _resolve_window(self, window: Optional[int]) -> int:
+    def _resolve_window(self, window: int | None) -> int:
         if window is None:
             return len(self.graphs) - 1
         if not (0 <= window < len(self.graphs)):
@@ -239,13 +238,13 @@ def _load_flows(cfg: Config):
     return load_cic_ids_csv(dataset, is_path=True)
 
 
-def _attack_nodes_by_window(flows, window_seconds: float) -> Dict[int, set]:
+def _attack_nodes_by_window(flows, window_seconds: float) -> dict[int, set]:
     """Ground-truth attacker sources per window (labels used ONLY for eval)."""
     if not flows:
         return {}
     # Match the grid anchoring used by build_windows so window indices align.
     t_min = (min(f.ts for f in flows) // window_seconds) * window_seconds
-    by_window: Dict[int, set] = {}
+    by_window: dict[int, set] = {}
     for f in flows:
         if f.is_attack:
             idx = int((f.ts - t_min) // window_seconds)
@@ -254,9 +253,9 @@ def _attack_nodes_by_window(flows, window_seconds: float) -> Dict[int, set]:
 
 
 def run_pipeline(
-    config_path: Optional[str] = None,
-    overrides: Optional[Dict[str, Any]] = None,
-    db_path: Optional[str] = None,
+    config_path: str | None = None,
+    overrides: dict[str, Any] | None = None,
+    db_path: str | None = None,
     reset_db: bool = True,
 ) -> SentinelService:
     cfg = load_config(config_path, overrides)
@@ -273,7 +272,7 @@ def run_pipeline(
     assert_no_leakage(split)
 
     # Fit the normaliser on TRAIN windows only, then apply to every graph.
-    train_rows: List[List[float]] = []
+    train_rows: list[list[float]] = []
     for i in split.train_indices:
         train_rows.extend(graphs[i].feature_matrix())
     normalizer = Normalizer(mode="zscore").fit(train_rows)
@@ -337,7 +336,7 @@ def _persist_run(service: SentinelService, split) -> None:
     feature_names = service.feature_names
     horizon = int(service.config.get("forecast.horizon", 3))
 
-    snapshot_ids: Dict[int, int] = {}
+    snapshot_ids: dict[int, int] = {}
     for g in graphs:
         snapshot_ids[g.index] = repo.save_snapshot(service.experiment_id, g)
 
@@ -413,7 +412,7 @@ def _persist_run(service: SentinelService, split) -> None:
                 repo.save_forecast_result(fid, unc, nov, stab)
 
 
-def _evaluate(service: SentinelService, flows, split) -> Dict[str, Any]:
+def _evaluate(service: SentinelService, flows, split) -> dict[str, Any]:
     """Precision/recall of anomalous detection vs flow labels (eval only)."""
     truth = _attack_nodes_by_window(flows, service.window_seconds)
     tp = fp = fn = 0

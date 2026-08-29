@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import List, Optional
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
@@ -32,7 +31,7 @@ def _overrides(args) -> dict:
     return ov
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sentinelx", description="Sentinel-X CLI")
     sub = parser.add_subparsers(dest="command", required=True)
 

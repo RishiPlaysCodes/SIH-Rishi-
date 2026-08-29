@@ -10,8 +10,8 @@ ensembles / conformal prediction are the documented future comparison points.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence
 
 from sentinelx.graph.types import GraphState
 from sentinelx.linalg import mean_vector, std_vector
@@ -24,7 +24,7 @@ class UncertaintyResult:
     mean_prediction: float
     std_dev: float
     label: str  # LOW | MEDIUM | HIGH
-    per_node_sigma: Dict[str, float] = field(default_factory=dict)
+    per_node_sigma: dict[str, float] = field(default_factory=dict)
 
 
 def _label(sigma: float, low: float, high: float) -> str:
@@ -51,15 +51,15 @@ def estimate_uncertainty(
     rng = rng or Rng(0)
 
     # Collect, per node, the stack of predicted feature vectors across passes.
-    stacks: Dict[str, List[List[float]]] = {}
+    stacks: dict[str, list[list[float]]] = {}
     for p in range(num_passes):
         pass_rng = rng.spawn(f"mc-{p}")
         pred = model.predict_next(history, dropout=dropout, rng=pass_rng)
         for key, node in pred.nodes.items():
             stacks.setdefault(key, []).append(list(node.features))
 
-    per_node_sigma: Dict[str, float] = {}
-    node_means: List[float] = []
+    per_node_sigma: dict[str, float] = {}
+    node_means: list[float] = []
     for key, rows in stacks.items():
         sigma_vec = std_vector(rows)
         mean_vec = mean_vector(rows)

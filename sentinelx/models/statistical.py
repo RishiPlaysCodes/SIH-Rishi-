@@ -7,7 +7,7 @@ exactly the kind of ablation the PRD's success metrics call for.
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
 
 from sentinelx.graph.types import GraphState
 from sentinelx.models.base import WorldModel, apply_dropout
@@ -19,11 +19,11 @@ class PersistenceModel(WorldModel):
 
     name = "baseline_statistical"
 
-    def fit(self, train_graphs: Sequence[GraphState]) -> "PersistenceModel":
+    def fit(self, train_graphs: Sequence[GraphState]) -> PersistenceModel:
         return self
 
     def predict_next(
-        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Optional[Rng] = None
+        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Rng | None = None
     ) -> GraphState:
         if not history:
             raise ValueError("PersistenceModel.predict_next requires non-empty history")
@@ -44,11 +44,11 @@ class EWMAModel(WorldModel):
             raise ValueError("EWMA alpha must be in (0, 1]")
         self.alpha = alpha
 
-    def fit(self, train_graphs: Sequence[GraphState]) -> "EWMAModel":
+    def fit(self, train_graphs: Sequence[GraphState]) -> EWMAModel:
         return self
 
     def predict_next(
-        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Optional[Rng] = None
+        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Rng | None = None
     ) -> GraphState:
         if not history:
             raise ValueError("EWMAModel.predict_next requires non-empty history")
@@ -57,7 +57,7 @@ class EWMAModel(WorldModel):
         dim = len(last.node_feature_names)
         for key in last.nodes:
             # Walk history oldest->newest, updating the EWMA for this node.
-            ewma: Optional[List[float]] = None
+            ewma: list[float] | None = None
             for g in history:
                 node = g.nodes.get(key)
                 if node is None:

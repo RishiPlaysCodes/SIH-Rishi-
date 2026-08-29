@@ -13,15 +13,15 @@ and a PyTorch-Geometric temporal GNN drops in without touching call sites.
 """
 
 from sentinelx.models.base import WorldModel
-from sentinelx.models.statistical import EWMAModel, PersistenceModel
 from sentinelx.models.linear import LinearTransitionModel
 from sentinelx.models.registry import available_models, build_model
+from sentinelx.models.statistical import EWMAModel, PersistenceModel
 
 __all__ = [
-    "WorldModel",
-    "PersistenceModel",
     "EWMAModel",
     "LinearTransitionModel",
-    "build_model",
+    "PersistenceModel",
+    "WorldModel",
     "available_models",
+    "build_model",
 ]

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import random
-from typing import List
 
 
 class Rng:
@@ -38,13 +37,13 @@ class Rng:
     def choice(self, seq):
         return self._r.choice(seq)
 
-    def shuffle(self, seq: List) -> None:
+    def shuffle(self, seq: list) -> None:
         self._r.shuffle(seq)
 
     def sample(self, population, k):
         return self._r.sample(population, k)
 
-    def spawn(self, label: str) -> "Rng":
+    def spawn(self, label: str) -> Rng:
         """Deterministically derive a child stream keyed by ``label``."""
         digest = hashlib.sha256(f"{self.seed}:{label}".encode()).hexdigest()
         return Rng(int(digest[:16], 16))

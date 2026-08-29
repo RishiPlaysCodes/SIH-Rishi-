@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from sentinelx.graph.types import GraphState
 from sentinelx.linalg import euclidean
@@ -72,12 +71,12 @@ class DeviationResult:
     graph_score: float
     structural_error: float
     edge_state_error: float
-    per_node: Dict[str, NodeDeviation] = field(default_factory=dict)
+    per_node: dict[str, NodeDeviation] = field(default_factory=dict)
 
-    def anomalous_keys(self) -> List[str]:
+    def anomalous_keys(self) -> list[str]:
         return [k for k, d in self.per_node.items() if d.status == "anomalous"]
 
-    def deviating_keys(self) -> List[str]:
+    def deviating_keys(self) -> list[str]:
         return [k for k, d in self.per_node.items() if d.status == "deviating"]
 
 
@@ -125,8 +124,8 @@ def _edge_state_error(predicted: GraphState, actual: GraphState) -> float:
 def compute_deviation(
     predicted: GraphState,
     actual: GraphState,
-    previous: Optional[GraphState] = None,
-    weights: Optional[Dict[str, float]] = None,
+    previous: GraphState | None = None,
+    weights: dict[str, float] | None = None,
     anomaly_threshold: float = 0.55,
     deviating_threshold: float = 0.35,
 ) -> DeviationResult:
@@ -134,7 +133,7 @@ def compute_deviation(
     structural_error = _structural_error(predicted, actual)
     edge_state_error = _edge_state_error(predicted, actual)
 
-    per_node: Dict[str, NodeDeviation] = {}
+    per_node: dict[str, NodeDeviation] = {}
     scored_keys = set(actual.nodes) & set(predicted.nodes)
     for key in scored_keys:
         p_feat = predicted.nodes[key].features

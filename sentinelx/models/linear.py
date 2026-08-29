@@ -10,10 +10,10 @@ it in the full stack.
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
 
 from sentinelx.graph.types import GraphState
-from sentinelx.linalg import Matrix, ridge_fit, transpose, matvec
+from sentinelx.linalg import Matrix, matvec, ridge_fit, transpose
 from sentinelx.models.base import WorldModel, apply_dropout
 from sentinelx.seeding import Rng
 
@@ -29,9 +29,9 @@ class LinearTransitionModel(WorldModel):
         self.out_dim = 0
         self._fitted = False
 
-    def fit(self, train_graphs: Sequence[GraphState]) -> "LinearTransitionModel":
-        xs: List[List[float]] = []
-        ys: List[List[float]] = []
+    def fit(self, train_graphs: Sequence[GraphState]) -> LinearTransitionModel:
+        xs: list[list[float]] = []
+        ys: list[list[float]] = []
         for g_t, g_next in zip(train_graphs, list(train_graphs)[1:]):
             for key, node in g_t.nodes.items():
                 nxt = g_next.nodes.get(key)
@@ -50,7 +50,7 @@ class LinearTransitionModel(WorldModel):
         return self
 
     def predict_next(
-        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Optional[Rng] = None
+        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Rng | None = None
     ) -> GraphState:
         if not history:
             raise ValueError("LinearTransitionModel.predict_next requires non-empty history")

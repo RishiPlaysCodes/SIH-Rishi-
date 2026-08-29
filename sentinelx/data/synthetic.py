@@ -20,8 +20,6 @@ Attack scenarios (begin at ``attack_start_window``):
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from sentinelx.data.schema import FlowRecord
 from sentinelx.seeding import Rng
 
@@ -37,7 +35,7 @@ def _server_id(i: int) -> str:
 class _HostProfile:
     """Stable per-host behavioural fingerprint for benign traffic."""
 
-    def __init__(self, rng: Rng, servers: List[str]):
+    def __init__(self, rng: Rng, servers: list[str]):
         self.flows_per_window = rng.randint(4, 7)
         self.home_servers = rng.sample(servers, k=min(2, len(servers)))
         self.port = rng.choice([80, 443, 53])
@@ -56,14 +54,14 @@ def generate_synthetic_flows(
     attack_start_window: int = 30,
     attack_type: str = "lateral_movement",
     seed: int = 1337,
-) -> List[FlowRecord]:
+) -> list[FlowRecord]:
     """Generate a reproducible list of flows sorted by timestamp."""
     rng = Rng(seed).spawn("synthetic")
     hosts = [_host_id(i) for i in range(num_hosts)]
     servers = [_server_id(i) for i in range(num_servers)]
     scan_ports = [21, 22, 23, 135, 139, 445, 3389, 8080]
-    profiles: Dict[str, _HostProfile] = {h: _HostProfile(rng, servers) for h in hosts}
-    flows: List[FlowRecord] = []
+    profiles: dict[str, _HostProfile] = {h: _HostProfile(rng, servers) for h in hosts}
+    flows: list[FlowRecord] = []
 
     # A compromise CHAIN: the primary attacker infects a secondary host, which
     # later infects a tertiary host. Each compromised host begins its own
@@ -106,7 +104,7 @@ def _jitter(rng: Rng, base: float, frac: float = 0.08) -> float:
     return max(0.0, base * (1.0 + rng.gauss(0.0, frac)))
 
 
-def _benign_host_window(flows, rng, host, prof: "_HostProfile", t0, wsec) -> None:
+def _benign_host_window(flows, rng, host, prof: _HostProfile, t0, wsec) -> None:
     n_flows = max(1, round(_jitter(rng, prof.flows_per_window, 0.12)))
     spacing = wsec / (n_flows + 1)
     for j in range(n_flows):

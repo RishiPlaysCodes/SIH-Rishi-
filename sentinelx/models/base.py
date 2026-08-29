@@ -18,13 +18,13 @@ model, including the deterministic statistical baselines.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
 
 from sentinelx.graph.types import GraphState, NodeState
 from sentinelx.seeding import Rng
 
 
-def apply_dropout(vec: Sequence[float], dropout: float, rng: Optional[Rng]) -> List[float]:
+def apply_dropout(vec: Sequence[float], dropout: float, rng: Rng | None) -> list[float]:
     """Inverted dropout: zero each dim with prob ``dropout``, scale survivors."""
     if dropout <= 0.0 or rng is None:
         return list(vec)
@@ -37,12 +37,12 @@ class WorldModel(ABC):
     name: str = "base"
 
     @abstractmethod
-    def fit(self, train_graphs: Sequence[GraphState]) -> "WorldModel":
+    def fit(self, train_graphs: Sequence[GraphState]) -> WorldModel:
         """Learn transition dynamics from a chronological training sequence."""
 
     @abstractmethod
     def predict_next(
-        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Optional[Rng] = None
+        self, history: Sequence[GraphState], dropout: float = 0.0, rng: Rng | None = None
     ) -> GraphState:
         """Forecast the next graph state given observed history."""
 
@@ -56,11 +56,11 @@ class WorldModel(ABC):
         return pred
 
     def predict_sequence(
-        self, history: Sequence[GraphState], k: int, dropout: float = 0.0, rng: Optional[Rng] = None
-    ) -> List[GraphState]:
+        self, history: Sequence[GraphState], k: int, dropout: float = 0.0, rng: Rng | None = None
+    ) -> list[GraphState]:
         """Autoregressive K-step rollout (feeds predictions back as input)."""
-        rolling: List[GraphState] = list(history)
-        out: List[GraphState] = []
+        rolling: list[GraphState] = list(history)
+        out: list[GraphState] = []
         for _ in range(k):
             nxt = self.predict_next(rolling, dropout=dropout, rng=rng)
             out.append(nxt)
@@ -68,7 +68,7 @@ class WorldModel(ABC):
         return out
 
     @staticmethod
-    def _set_features(pred: GraphState, key: str, features: List[float]) -> None:
+    def _set_features(pred: GraphState, key: str, features: list[float]) -> None:
         node = pred.nodes.get(key)
         if node is None:
             pred.nodes[key] = NodeState(key=key, label=key, features=features)

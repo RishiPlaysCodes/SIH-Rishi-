@@ -62,8 +62,8 @@ def test_detection_precision_recall(graph_sequence):
     engine = ForecastEngine(model)
     devs = engine.rolling_deviation(graphs)
     # ground truth: attacker sources per window
-    from sentinelx.pipeline import _attack_nodes_by_window
     from sentinelx.data import clean_flows, generate_synthetic_flows
+    from sentinelx.pipeline import _attack_nodes_by_window
 
     flows = clean_flows(
         generate_synthetic_flows(num_windows=40, num_hosts=14, num_servers=4,

@@ -9,13 +9,12 @@ invariant and :func:`assert_no_leakage` is exercised directly by the test suite.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
 class TemporalSplit:
-    train_indices: List[int]
-    test_indices: List[int]
+    train_indices: list[int]
+    test_indices: list[int]
 
     @property
     def boundary(self) -> int:
@@ -32,7 +31,7 @@ def temporal_split(num_windows: int, test_fraction: float = 0.3) -> TemporalSpli
         return TemporalSplit([], [])
     if not (0.0 < test_fraction < 1.0):
         raise ValueError("test_fraction must be in (0, 1)")
-    n_test = max(1, int(round(num_windows * test_fraction)))
+    n_test = max(1, round(num_windows * test_fraction))
     n_test = min(n_test, num_windows - 1) if num_windows > 1 else 0
     boundary = num_windows - n_test
     return TemporalSplit(

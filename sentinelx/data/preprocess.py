@@ -13,12 +13,11 @@ import csv
 import hashlib
 import io
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence
 
 from sentinelx.data.schema import FlowRecord
 from sentinelx.linalg import Vector, clamp
-
 
 # Column aliases for the common CIC-IDS2018 / CIC-flowmeter exports. Multiple
 # spellings are accepted because the public CSVs are inconsistent.
@@ -46,7 +45,7 @@ def hash_asset(identifier: str, salt: str = "sentinelx") -> str:
     return f"N{digest[:10]}"
 
 
-def _pick(row: Dict[str, str], aliases: List[str]) -> str | None:
+def _pick(row: dict[str, str], aliases: list[str]) -> str | None:
     for name in aliases:
         if name in row and row[name] != "":
             return row[name]
@@ -69,7 +68,7 @@ def _to_int(value: str | None, default: int = 0) -> int:
     return int(_to_float(value, default))
 
 
-def load_cic_ids_csv(text_or_path: str, hash_ips: bool = True, is_path: bool = True) -> List[FlowRecord]:
+def load_cic_ids_csv(text_or_path: str, hash_ips: bool = True, is_path: bool = True) -> list[FlowRecord]:
     """Parse a CIC-IDS2018-style CSV into :class:`FlowRecord` objects.
 
     ``text_or_path`` is a filesystem path when ``is_path`` (default), otherwise
@@ -83,7 +82,7 @@ def load_cic_ids_csv(text_or_path: str, hash_ips: bool = True, is_path: bool = T
         content = text_or_path
 
     reader = csv.DictReader(io.StringIO(content))
-    records: List[FlowRecord] = []
+    records: list[FlowRecord] = []
     for i, row in enumerate(reader):
         # Duration in CIC exports is microseconds; convert to seconds.
         raw_dur = _to_float(_pick(row, _CIC_ALIASES["duration"]), 0.0)
@@ -111,9 +110,9 @@ def load_cic_ids_csv(text_or_path: str, hash_ips: bool = True, is_path: bool = T
     return records
 
 
-def clean_flows(records: Sequence[FlowRecord]) -> List[FlowRecord]:
+def clean_flows(records: Sequence[FlowRecord]) -> list[FlowRecord]:
     """Drop physically impossible / empty flows and clamp non-finite fields."""
-    cleaned: List[FlowRecord] = []
+    cleaned: list[FlowRecord] = []
     for r in records:
         if r.duration < 0:
             continue
@@ -145,13 +144,13 @@ class Normalizer:
     """
 
     mode: str = "zscore"
-    mins: List[float] = field(default_factory=list)
-    maxs: List[float] = field(default_factory=list)
-    means: List[float] = field(default_factory=list)
-    stds: List[float] = field(default_factory=list)
+    mins: list[float] = field(default_factory=list)
+    maxs: list[float] = field(default_factory=list)
+    means: list[float] = field(default_factory=list)
+    stds: list[float] = field(default_factory=list)
     _fitted: bool = False
 
-    def fit(self, rows: Sequence[Sequence[float]]) -> "Normalizer":
+    def fit(self, rows: Sequence[Sequence[float]]) -> Normalizer:
         if not rows:
             raise ValueError("Normalizer.fit received no rows")
         dim = len(rows[0])
@@ -187,5 +186,5 @@ class Normalizer:
         # z-score (unclamped)
         return [(v - self.means[j]) / self.stds[j] for j, v in enumerate(vec)]
 
-    def transform(self, rows: Sequence[Sequence[float]]) -> List[Vector]:
+    def transform(self, rows: Sequence[Sequence[float]]) -> list[Vector]:
         return [self.transform_vector(r) for r in rows]

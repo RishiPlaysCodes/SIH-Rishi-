@@ -8,8 +8,8 @@ import pytest
 # Ensure the package is importable when tests run from the repo root.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sentinelx.data import clean_flows, generate_synthetic_flows  # noqa: E402
-from sentinelx.graph import build_graph_sequence  # noqa: E402
+from sentinelx.data import clean_flows, generate_synthetic_flows
+from sentinelx.graph import build_graph_sequence
 
 
 @pytest.fixture(scope="session")

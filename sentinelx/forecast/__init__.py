@@ -9,7 +9,7 @@ from sentinelx.forecast.engine import ForecastEngine
 
 __all__ = [
     "DeviationResult",
+    "ForecastEngine",
     "NodeDeviation",
     "compute_deviation",
-    "ForecastEngine",
 ]

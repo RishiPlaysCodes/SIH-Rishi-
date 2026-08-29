@@ -2,4 +2,4 @@
 
 from sentinelx.api.server import build_handler, serve
 
-__all__ = ["serve", "build_handler"]
+__all__ = ["build_handler", "serve"]

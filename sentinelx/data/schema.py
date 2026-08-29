@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 # Node-level (behavioural + temporal) feature vector, fixed order.
 NODE_FEATURES = [
     "connection_frequency",   # number of outbound flows in the window

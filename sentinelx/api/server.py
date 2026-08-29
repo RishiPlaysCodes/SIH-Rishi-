@@ -23,8 +23,9 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 _FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
@@ -38,19 +39,23 @@ _CONTENT_TYPES = {
 }
 
 
-def build_handler(state: Dict[str, Any]):
+def build_handler(state: dict[str, Any]):
     """Create a request handler class bound to a mutable ``state`` dict.
 
     ``state['service']`` is the live :class:`SentinelService`; ``/ingest`` may
-    replace it with a freshly-run pipeline.
+    replace it with a freshly-run pipeline (serialised by ``ingest_lock``).
     """
+    state.setdefault("ingest_lock", threading.Lock())
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "SentinelX/0.1"
 
         # -- helpers -------------------------------------------------------- #
         def _send_json(self, payload: Any, status: int = 200) -> None:
-            body = json.dumps(payload, default=_json_default).encode("utf-8")
+            # allow_nan=False: never emit NaN/Infinity (invalid JSON for strict
+            # clients). If a non-finite value ever slips through it raises here
+            # and is turned into a clean 500 rather than corrupt output.
+            body = json.dumps(payload, default=_json_default, allow_nan=False).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
@@ -74,7 +79,7 @@ def build_handler(state: Dict[str, Any]):
             self.end_headers()
             self.wfile.write(body)
 
-        def _read_body(self) -> Dict[str, Any]:
+        def _read_body(self) -> dict[str, Any]:
             length = int(self.headers.get("Content-Length", 0) or 0)
             if length <= 0:
                 return {}
@@ -95,10 +100,10 @@ def build_handler(state: Dict[str, Any]):
                 super().log_message(fmt, *args)
 
         # -- routing -------------------------------------------------------- #
-        def do_OPTIONS(self):  # noqa: N802 - CORS preflight
+        def do_OPTIONS(self):
             self._send_json({}, 204)
 
-        def do_GET(self):  # noqa: N802
+        def do_GET(self):
             parsed = urlparse(self.path)
             route = parsed.path.rstrip("/") or "/"
             qs = parse_qs(parsed.query)
@@ -133,7 +138,7 @@ def build_handler(state: Dict[str, Any]):
             except Exception as exc:  # pragma: no cover - defensive
                 return self._send_json({"error": str(exc)}, 500)
 
-        def do_POST(self):  # noqa: N802
+        def do_POST(self):
             parsed = urlparse(self.path)
             route = parsed.path.rstrip("/") or "/"
             try:
@@ -157,10 +162,10 @@ def build_handler(state: Dict[str, Any]):
             except Exception as exc:  # pragma: no cover - defensive
                 return self._send_json({"error": str(exc)}, 500)
 
-        def _reingest(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        def _reingest(self, body: dict[str, Any]) -> dict[str, Any]:
             from sentinelx.pipeline import run_pipeline
 
-            overrides: Dict[str, Any] = {}
+            overrides: dict[str, Any] = {}
             exp = {}
             if "seed" in body:
                 exp["seed"] = int(body["seed"])
@@ -174,19 +179,29 @@ def build_handler(state: Dict[str, Any]):
                     data[key] = body[key]
             if data:
                 overrides["data"] = data
-            new_service = run_pipeline(
-                config_path=state.get("config_path"),
-                overrides=overrides,
-                db_path=state.get("db_path"),
-            )
-            state["service"] = new_service
+            # Serialise re-ingests: concurrent pipeline runs would reset() and
+            # rewrite the same SQLite file simultaneously. The lock also lets us
+            # cleanly close the superseded connection instead of leaking it.
+            with state["ingest_lock"]:
+                old_service = state["service"]
+                new_service = run_pipeline(
+                    config_path=state.get("config_path"),
+                    overrides=overrides,
+                    db_path=state.get("db_path"),
+                )
+                state["service"] = new_service
+                try:
+                    if old_service is not None and old_service is not new_service:
+                        old_service.repo.db.close()
+                except Exception:  # pragma: no cover - best-effort cleanup
+                    pass
             return {"status": "reingested", "summary": new_service.summary}
 
     return Handler
 
 
-def _int(qs: Dict[str, Any], key: str):
-    if key in qs and qs[key]:
+def _int(qs: dict[str, Any], key: str):
+    if qs.get(key):
         return int(qs[key][0])
     return None
 
@@ -198,13 +213,14 @@ def _json_default(obj):
 
 
 def serve(service, host: str = "127.0.0.1", port: int = 8787, verbose: bool = False) -> None:
-    state: Dict[str, Any] = {
+    state: dict[str, Any] = {
         "service": service,
         "frontend_dir": os.path.abspath(_FRONTEND_DIR),
         "db_path": getattr(getattr(service, "repo", None), "db", None)
         and service.repo.db.path,
         "config_path": None,
         "verbose": verbose,
+        "ingest_lock": threading.Lock(),
     }
     handler = build_handler(state)
     httpd = ThreadingHTTPServer((host, port), handler)

@@ -54,3 +54,11 @@ line-length = 100
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+# BLE001 / S110: several sites intentionally use a broad ``except Exception``
+# as a last line of defence — HTTP request handlers must never crash the
+# server (they convert any error into a clean 500), and the config loader
+# falls back to its built-in YAML parser if optional libraries misbehave.
+# These are deliberate, documented design choices, not overlooked bugs.
+ignore = ["BLE001", "S110"]

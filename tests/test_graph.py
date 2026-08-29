@@ -1,6 +1,5 @@
 """Dynamic graph construction and GraphState behaviour."""
 
-from sentinelx.graph import build_graph_sequence
 from sentinelx.graph.types import EdgeState, GraphState, NodeState
 
 
