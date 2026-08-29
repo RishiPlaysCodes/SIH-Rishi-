@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from typing import Any, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Any
 
 _SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.sql")
 
@@ -37,10 +38,10 @@ class Database:
         self.conn.commit()
         return int(cur.lastrowid)
 
-    def query(self, sql: str, params: Iterable[Any] = ()) -> List[sqlite3.Row]:
+    def query(self, sql: str, params: Iterable[Any] = ()) -> list[sqlite3.Row]:
         return list(self.conn.execute(sql, tuple(params)).fetchall())
 
-    def query_one(self, sql: str, params: Iterable[Any] = ()) -> Optional[sqlite3.Row]:
+    def query_one(self, sql: str, params: Iterable[Any] = ()) -> sqlite3.Row | None:
         row = self.conn.execute(sql, tuple(params)).fetchone()
         return row
 

@@ -7,8 +7,8 @@ declared in :data:`sentinelx.data.schema.NODE_FEATURES`.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Sequence
 
 from sentinelx.data.schema import NODE_FEATURES, FlowRecord
 from sentinelx.linalg import Vector
@@ -19,10 +19,10 @@ class WindowSlice:
     index: int
     start: float
     end: float
-    flows: List[FlowRecord]
+    flows: list[FlowRecord]
 
 
-def build_windows(flows: Sequence[FlowRecord], window_seconds: int) -> List[WindowSlice]:
+def build_windows(flows: Sequence[FlowRecord], window_seconds: int) -> list[WindowSlice]:
     """Group time-sorted flows into contiguous fixed-width windows.
 
     Empty interior windows are preserved (as empty slices) so the temporal
@@ -38,22 +38,22 @@ def build_windows(flows: Sequence[FlowRecord], window_seconds: int) -> List[Wind
     t_min = (ordered[0].ts // window_seconds) * window_seconds
     t_max = ordered[-1].ts
     num_windows = int((t_max - t_min) // window_seconds) + 1
-    buckets: List[List[FlowRecord]] = [[] for _ in range(num_windows)]
+    buckets: list[list[FlowRecord]] = [[] for _ in range(num_windows)]
     for f in ordered:
         idx = int((f.ts - t_min) // window_seconds)
         idx = min(idx, num_windows - 1)
         buckets[idx].append(f)
-    slices: List[WindowSlice] = []
+    slices: list[WindowSlice] = []
     for i, bucket in enumerate(buckets):
         start = t_min + i * window_seconds
         slices.append(WindowSlice(index=i, start=start, end=start + window_seconds, flows=bucket))
     return slices
 
 
-def window_node_features(flows: Sequence[FlowRecord]) -> Dict[str, Vector]:
+def window_node_features(flows: Sequence[FlowRecord]) -> dict[str, Vector]:
     """Compute the fixed-order node feature vector for every node in a window."""
-    outbound: Dict[str, List[FlowRecord]] = {}
-    inbound_bytes: Dict[str, int] = {}
+    outbound: dict[str, list[FlowRecord]] = {}
+    inbound_bytes: dict[str, int] = {}
     all_nodes: set[str] = set()
 
     for f in flows:
@@ -62,7 +62,7 @@ def window_node_features(flows: Sequence[FlowRecord]) -> Dict[str, Vector]:
         outbound.setdefault(f.src, []).append(f)
         inbound_bytes[f.dst] = inbound_bytes.get(f.dst, 0) + f.bytes
 
-    features: Dict[str, Vector] = {}
+    features: dict[str, Vector] = {}
     for node in all_nodes:
         out_flows = outbound.get(node, [])
         out_flows_sorted = sorted(out_flows, key=lambda f: f.ts)

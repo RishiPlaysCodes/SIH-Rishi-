@@ -15,8 +15,8 @@ principle they are reported, not assumed to improve forecasting.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Sequence
 
 from sentinelx.forecast.deviation import DeviationResult
 from sentinelx.graph.types import GraphState
@@ -32,7 +32,7 @@ class PropagationEvent:
     effective_reproduction_number: float
 
 
-def _infected(dev: DeviationResult) -> Dict[str, float]:
+def _infected(dev: DeviationResult) -> dict[str, float]:
     """Map of anomalous-node -> deviation score for a window."""
     return {
         k: d.deviation_score
@@ -43,11 +43,11 @@ def _infected(dev: DeviationResult) -> Dict[str, float]:
 
 def compute_propagation(
     graphs: Sequence[GraphState],
-    dev_by_index: Dict[int, DeviationResult],
+    dev_by_index: dict[int, DeviationResult],
     window_seconds: float,
-) -> List[PropagationEvent]:
+) -> list[PropagationEvent]:
     """Detect propagation events across a scored graph sequence."""
-    events: List[PropagationEvent] = []
+    events: list[PropagationEvent] = []
     dt = window_seconds if window_seconds > 0 else 1.0
     by_index = {g.index: g for g in graphs}
 

@@ -8,7 +8,7 @@ Feature vectors and predicted graphs are stored as JSON text.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sentinelx.analytics.counterfactual import CounterfactualResult
 from sentinelx.analytics.novelty import NoveltyResult
@@ -32,7 +32,7 @@ class Repository:
         model_type: str,
         config_yaml: str,
         seed: int,
-        mlflow_run_id: Optional[str] = None,
+        mlflow_run_id: str | None = None,
     ) -> int:
         return self.db.insert(
             "INSERT INTO experiments(name,dataset,model_type,config_yaml,seed,mlflow_run_id) "
@@ -40,7 +40,7 @@ class Repository:
             (name, dataset, model_type, config_yaml, seed, mlflow_run_id),
         )
 
-    def latest_experiment(self) -> Optional[Dict[str, Any]]:
+    def latest_experiment(self) -> dict[str, Any] | None:
         row = self.db.query_one("SELECT * FROM experiments ORDER BY id DESC LIMIT 1")
         return dict(row) if row else None
 
@@ -76,21 +76,21 @@ class Repository:
         self.db.commit()
         return snapshot_id
 
-    def snapshot_id_for_window(self, experiment_id: int, window_index: int) -> Optional[int]:
+    def snapshot_id_for_window(self, experiment_id: int, window_index: int) -> int | None:
         row = self.db.query_one(
             "SELECT id FROM network_snapshots WHERE experiment_id=? AND window_index=?",
             (experiment_id, window_index),
         )
         return int(row["id"]) if row else None
 
-    def list_snapshots(self, experiment_id: int) -> List[Dict[str, Any]]:
+    def list_snapshots(self, experiment_id: int) -> list[dict[str, Any]]:
         rows = self.db.query(
             "SELECT * FROM network_snapshots WHERE experiment_id=? ORDER BY window_index",
             (experiment_id,),
         )
         return [dict(r) for r in rows]
 
-    def get_snapshot_graph(self, snapshot_id: int) -> Dict[str, Any]:
+    def get_snapshot_graph(self, snapshot_id: int) -> dict[str, Any]:
         snap = self.db.query_one("SELECT * FROM network_snapshots WHERE id=?", (snapshot_id,))
         nodes = self.db.query("SELECT * FROM nodes WHERE snapshot_id=?", (snapshot_id,))
         edges = self.db.query("SELECT * FROM edges WHERE snapshot_id=?", (snapshot_id,))
@@ -138,7 +138,7 @@ class Repository:
             ),
         )
 
-    def get_anomalies(self, snapshot_id: int) -> List[Dict[str, Any]]:
+    def get_anomalies(self, snapshot_id: int) -> list[dict[str, Any]]:
         rows = self.db.query(
             "SELECT * FROM anomalies WHERE snapshot_id=? ORDER BY deviation_score DESC",
             (snapshot_id,),
@@ -147,7 +147,7 @@ class Repository:
 
     # ---- forecasts -------------------------------------------------------- #
     def save_forecast(
-        self, experiment_id: int, snapshot_id: int, horizon_step: int, predicted_graph: Dict
+        self, experiment_id: int, snapshot_id: int, horizon_step: int, predicted_graph: dict
     ) -> int:
         return self.db.insert(
             "INSERT INTO forecasts(experiment_id,snapshot_id,horizon_step,predicted_graph) "
@@ -159,8 +159,8 @@ class Repository:
         self,
         forecast_id: int,
         uncertainty: UncertaintyResult,
-        novelty: Optional[NoveltyResult] = None,
-        stability: Optional[StabilityResult] = None,
+        novelty: NoveltyResult | None = None,
+        stability: StabilityResult | None = None,
     ) -> int:
         return self.db.insert(
             "INSERT INTO forecast_results(forecast_id,mean_prediction,std_dev,uncertainty_label,"
@@ -178,7 +178,7 @@ class Repository:
             ),
         )
 
-    def get_forecasts(self, snapshot_id: int) -> List[Dict[str, Any]]:
+    def get_forecasts(self, snapshot_id: int) -> list[dict[str, Any]]:
         rows = self.db.query(
             "SELECT f.*, r.mean_prediction, r.std_dev, r.uncertainty_label, "
             "r.trajectory_novelty_score, r.novelty_label, r.stability_score, r.stability_label "
@@ -209,7 +209,7 @@ class Repository:
             ),
         )
 
-    def get_propagation_events(self, experiment_id: int) -> List[Dict[str, Any]]:
+    def get_propagation_events(self, experiment_id: int) -> list[dict[str, Any]]:
         rows = self.db.query(
             "SELECT p.*, s.window_index FROM propagation_events p "
             "JOIN network_snapshots s ON s.id=p.snapshot_id "
@@ -232,8 +232,8 @@ class Repository:
         snapshot_id: int,
         event_type: str,
         narrative_text: str,
-        mitre_stage: Optional[str] = None,
-        contributing_features: Optional[List] = None,
+        mitre_stage: str | None = None,
+        contributing_features: list | None = None,
     ) -> int:
         return self.db.insert(
             "INSERT INTO incidents(snapshot_id,event_type,narrative_text,mitre_stage,"
@@ -247,7 +247,7 @@ class Repository:
             ),
         )
 
-    def get_incidents(self, experiment_id: int) -> List[Dict[str, Any]]:
+    def get_incidents(self, experiment_id: int) -> list[dict[str, Any]]:
         rows = self.db.query(
             "SELECT i.*, s.window_index, s.window_start FROM incidents i "
             "JOIN network_snapshots s ON s.id=i.snapshot_id "

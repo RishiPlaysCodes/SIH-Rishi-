@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from sentinelx.models.base import WorldModel
 from sentinelx.models.linear import LinearTransitionModel
@@ -14,11 +14,11 @@ _ALIASES = {
 }
 
 
-def available_models() -> List[str]:
+def available_models() -> list[str]:
     return ["persistence", "ewma", "linear_transition"]
 
 
-def build_model(model_type: str, model_cfg: Dict[str, Any] | None = None) -> WorldModel:
+def build_model(model_type: str, model_cfg: dict[str, Any] | None = None) -> WorldModel:
     cfg = model_cfg or {}
     key = _ALIASES.get(model_type, model_type)
     if key == "persistence":

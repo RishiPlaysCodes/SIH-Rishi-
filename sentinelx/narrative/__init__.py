@@ -10,6 +10,6 @@ from sentinelx.narrative.chronicle import (
 __all__ = [
     "narrate_deviation",
     "narrate_forecast",
-    "narrate_propagation",
     "narrate_intervention",
+    "narrate_propagation",
 ]

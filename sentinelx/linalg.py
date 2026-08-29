@@ -13,10 +13,10 @@ Torch without changing call sites (the signatures mirror common ndarray ops).
 from __future__ import annotations
 
 import math
-from typing import List, Sequence
+from collections.abc import Sequence
 
-Vector = List[float]
-Matrix = List[List[float]]
+Vector = list[float]
+Matrix = list[list[float]]
 
 
 # --------------------------------------------------------------------------- #

@@ -8,7 +8,7 @@ attribution over the GNN are the documented future upgrades.
 
 from __future__ import annotations
 
-from typing import Dict, List, Sequence
+from collections.abc import Sequence
 
 EXPLANATION_CAVEAT = (
     "Feature contributions are indicative attributions of forecast error, "
@@ -21,7 +21,7 @@ def feature_contributions(
     actual: Sequence[float],
     feature_names: Sequence[str],
     top_k: int | None = None,
-) -> List[Dict[str, float]]:
+) -> list[dict[str, float]]:
     """Rank features by their share of the squared prediction residual.
 
     Returns a list of ``{"feature": name, "contribution": share}`` sorted by
@@ -49,5 +49,5 @@ def top_feature_names(
     actual: Sequence[float],
     feature_names: Sequence[str],
     top_k: int = 3,
-) -> List[str]:
+) -> list[str]:
     return [c["feature"] for c in feature_contributions(predicted, actual, feature_names, top_k)]

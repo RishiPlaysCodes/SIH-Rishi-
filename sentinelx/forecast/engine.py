@@ -12,7 +12,7 @@ operations the rest of the platform needs:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence
+from collections.abc import Sequence
 
 from sentinelx.forecast.deviation import DeviationResult, compute_deviation
 from sentinelx.graph.types import GraphState
@@ -24,7 +24,7 @@ class ForecastEngine:
     def __init__(
         self,
         model: WorldModel,
-        weights: Optional[Dict[str, float]] = None,
+        weights: dict[str, float] | None = None,
         anomaly_threshold: float = 0.55,
         deviating_threshold: float = 0.35,
     ):
@@ -38,8 +38,8 @@ class ForecastEngine:
         history: Sequence[GraphState],
         k: int,
         dropout: float = 0.0,
-        rng: Optional[Rng] = None,
-    ) -> List[GraphState]:
+        rng: Rng | None = None,
+    ) -> list[GraphState]:
         if k < 1:
             raise ValueError("Forecast horizon k must be >= 1")
         return self.model.predict_sequence(history, k, dropout=dropout, rng=rng)
@@ -58,8 +58,8 @@ class ForecastEngine:
             deviating_threshold=self.deviating_threshold,
         )
 
-    def rolling_deviation(self, graphs: Sequence[GraphState]) -> List[DeviationResult]:
-        results: List[DeviationResult] = []
+    def rolling_deviation(self, graphs: Sequence[GraphState]) -> list[DeviationResult]:
+        results: list[DeviationResult] = []
         for t in range(1, len(graphs)):
             results.append(self.score_window(graphs, t))
         return results

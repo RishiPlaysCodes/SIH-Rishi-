@@ -9,7 +9,6 @@ V_t changes from one window to the next.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple
 
 from sentinelx.linalg import Vector, mean_vector
 
@@ -44,13 +43,13 @@ class GraphState:
     index: int
     window_start: float
     window_end: float
-    nodes: Dict[str, NodeState] = field(default_factory=dict)
-    edges: List[EdgeState] = field(default_factory=list)
-    node_feature_names: List[str] = field(default_factory=list)
-    edge_feature_names: List[str] = field(default_factory=list)
+    nodes: dict[str, NodeState] = field(default_factory=dict)
+    edges: list[EdgeState] = field(default_factory=list)
+    node_feature_names: list[str] = field(default_factory=list)
+    edge_feature_names: list[str] = field(default_factory=list)
 
     # ---- convenience accessors -------------------------------------------- #
-    def node_keys(self) -> List[str]:
+    def node_keys(self) -> list[str]:
         return sorted(self.nodes.keys())
 
     def node_count(self) -> int:
@@ -59,21 +58,21 @@ class GraphState:
     def edge_count(self) -> int:
         return len(self.edges)
 
-    def feature_matrix(self, keys: List[str] | None = None) -> List[Vector]:
+    def feature_matrix(self, keys: list[str] | None = None) -> list[Vector]:
         """Node feature rows aligned to ``keys`` (defaults to sorted node keys)."""
         keys = keys if keys is not None else self.node_keys()
         dim = len(self.node_feature_names)
-        rows: List[Vector] = []
+        rows: list[Vector] = []
         for k in keys:
             node = self.nodes.get(k)
             rows.append(list(node.features) if node else [0.0] * dim)
         return rows
 
-    def edge_set(self) -> set[Tuple[str, str]]:
+    def edge_set(self) -> set[tuple[str, str]]:
         return {(e.src, e.dst) for e in self.edges}
 
-    def adjacency(self) -> Dict[str, List[str]]:
-        adj: Dict[str, List[str]] = {k: [] for k in self.nodes}
+    def adjacency(self) -> dict[str, list[str]]:
+        adj: dict[str, list[str]] = {k: [] for k in self.nodes}
         for e in self.edges:
             adj.setdefault(e.src, []).append(e.dst)
         return adj
@@ -92,13 +91,13 @@ class GraphState:
         anomalous = sum(1 for nd in self.nodes.values() if nd.status == "anomalous")
         return list(mean_feat) + [n, e, density, float(anomalous)]
 
-    def anomalous_keys(self) -> List[str]:
+    def anomalous_keys(self) -> list[str]:
         return [k for k, nd in self.nodes.items() if nd.status == "anomalous"]
 
-    def server_keys(self) -> List[str]:
+    def server_keys(self) -> list[str]:
         return [k for k, nd in self.nodes.items() if nd.is_server]
 
-    def clone(self) -> "GraphState":
+    def clone(self) -> GraphState:
         return GraphState(
             index=self.index,
             window_start=self.window_start,
@@ -115,7 +114,7 @@ class GraphState:
             edge_feature_names=list(self.edge_feature_names),
         )
 
-    def to_json(self) -> Dict:
+    def to_json(self) -> dict:
         return {
             "index": self.index,
             "window_start": self.window_start,

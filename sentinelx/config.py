@@ -15,14 +15,13 @@ from __future__ import annotations
 
 import copy
 import os
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List
-
+from dataclasses import dataclass, field
+from typing import Any
 
 # --------------------------------------------------------------------------- #
 # Default configuration (source of truth; YAML files only override these).
 # --------------------------------------------------------------------------- #
-DEFAULT_CONFIG: Dict[str, Any] = {
+DEFAULT_CONFIG: dict[str, Any] = {
     "experiment": {
         "name": "sentinelx-default",
         "dataset": "synthetic",
@@ -97,7 +96,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 class Config:
     """Typed accessor around a nested config dict."""
 
-    data: Dict[str, Any] = field(default_factory=lambda: copy.deepcopy(DEFAULT_CONFIG))
+    data: dict[str, Any] = field(default_factory=lambda: copy.deepcopy(DEFAULT_CONFIG))
 
     def get(self, dotted: str, default: Any = None) -> Any:
         node: Any = self.data
@@ -107,7 +106,7 @@ class Config:
             node = node[part]
         return node
 
-    def section(self, name: str) -> Dict[str, Any]:
+    def section(self, name: str) -> dict[str, Any]:
         val = self.data.get(name, {})
         return val if isinstance(val, dict) else {}
 
@@ -115,14 +114,14 @@ class Config:
     def seed(self) -> int:
         return int(self.get("experiment.seed", 1337))
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         return copy.deepcopy(self.data)
 
     def to_yaml(self) -> str:
         return dump_yaml(self.data)
 
 
-def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Recursively merge ``override`` into a copy of ``base``."""
     out = copy.deepcopy(base)
     for key, value in override.items():
@@ -133,7 +132,7 @@ def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]
     return out
 
 
-def load_config(path: str | None = None, overrides: Dict[str, Any] | None = None) -> Config:
+def load_config(path: str | None = None, overrides: dict[str, Any] | None = None) -> Config:
     """Build a :class:`Config` from defaults, an optional YAML file, and overrides."""
     merged = copy.deepcopy(DEFAULT_CONFIG)
     if path:
@@ -150,11 +149,11 @@ def load_config(path: str | None = None, overrides: Dict[str, Any] | None = None
 # --------------------------------------------------------------------------- #
 # YAML handling: prefer a real library, fall back to the built-in subset parser.
 # --------------------------------------------------------------------------- #
-def parse_yaml(text: str) -> Dict[str, Any]:
+def parse_yaml(text: str) -> dict[str, Any]:
     try:  # pragma: no cover - exercised only when the lib is installed
-        from ruamel.yaml import YAML  # type: ignore
-
         import io
+
+        from ruamel.yaml import YAML  # type: ignore
 
         yaml = YAML(typ="safe")
         return yaml.load(io.StringIO(text)) or {}
@@ -169,14 +168,14 @@ def parse_yaml(text: str) -> Dict[str, Any]:
     return _parse_yaml_subset(text)
 
 
-def dump_yaml(data: Dict[str, Any]) -> str:
+def dump_yaml(data: dict[str, Any]) -> str:
     """Serialise a nested dict to the YAML subset understood by the parser."""
-    lines: List[str] = []
+    lines: list[str] = []
     _dump_node(data, 0, lines)
     return "\n".join(lines) + "\n"
 
 
-def _dump_node(node: Any, indent: int, lines: List[str]) -> None:
+def _dump_node(node: Any, indent: int, lines: list[str]) -> None:
     pad = "  " * indent
     if isinstance(node, dict):
         for key, value in node.items():
@@ -200,7 +199,7 @@ def _scalar_to_str(value: Any) -> str:
 
 
 # --- minimal indentation-based YAML subset parser -------------------------- #
-def _parse_yaml_subset(text: str) -> Dict[str, Any]:
+def _parse_yaml_subset(text: str) -> dict[str, Any]:
     tokens = []  # (indent, key, raw_value, is_list_item)
     for raw_line in text.splitlines():
         line = raw_line.split("#", 1)[0].rstrip() if not _in_quotes(raw_line) else raw_line.rstrip()
@@ -223,14 +222,14 @@ def _parse_yaml_subset(text: str) -> Dict[str, Any]:
 
 def _in_quotes(line: str) -> bool:
     stripped = line.strip()
-    return stripped.startswith('"') or stripped.startswith("'")
+    return stripped.startswith(('"', "'"))
 
 
 def _build(tokens, index: int, indent: int):
     """Recursively build a structure from tokens at the given indent level."""
     # Determine whether this block is a list or a map.
     if index < len(tokens) and tokens[index][3]:
-        result: List[Any] = []
+        result: list[Any] = []
         while index < len(tokens):
             tok_indent, _, raw_value, is_item = tokens[index]
             if tok_indent < indent or not is_item:
@@ -239,7 +238,7 @@ def _build(tokens, index: int, indent: int):
             index += 1
         return result, index
 
-    result_map: Dict[str, Any] = {}
+    result_map: dict[str, Any] = {}
     while index < len(tokens):
         tok_indent, key, raw_value, is_item = tokens[index]
         if tok_indent < indent or is_item:
@@ -286,10 +285,10 @@ def _coerce(raw: str) -> Any:
 
 
 __all__ = [
-    "Config",
     "DEFAULT_CONFIG",
-    "load_config",
+    "Config",
     "deep_merge",
-    "parse_yaml",
     "dump_yaml",
+    "load_config",
+    "parse_yaml",
 ]

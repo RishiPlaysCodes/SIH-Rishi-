@@ -3,6 +3,7 @@
 import json
 import threading
 import time
+import urllib.error
 import urllib.request
 
 import pytest
@@ -82,8 +83,9 @@ def test_http_api_endpoints(service):
     assert "events" in get("/propagation")[1]
     assert "incidents" in get("/incident")[1]
 
-    # POST counterfactual
-    body = json.dumps({"action_type": "ISOLATE_NODE", "window": 30}).encode()
+    # POST counterfactual with an explicit target (a real node from the graph)
+    target = get("/network/state?window=30")[1]["nodes"][0]["key"]
+    body = json.dumps({"action_type": "ISOLATE_NODE", "window": 30, "target_node": target}).encode()
     req = urllib.request.Request(
         f"http://127.0.0.1:{port}/counterfactual", data=body,
         headers={"Content-Type": "application/json"}, method="POST",
@@ -91,6 +93,19 @@ def test_http_api_endpoints(service):
     with urllib.request.urlopen(req, timeout=10) as r:
         cf = json.loads(r.read().decode())
     assert "delta_risk" in cf
+
+    # An under-specified intervention must be rejected (HTTP 400), not silently
+    # returned as a misleading no-op.
+    bad = json.dumps({"action_type": "ISOLATE_NODE", "window": 30}).encode()
+    req = urllib.request.Request(
+        f"http://127.0.0.1:{port}/counterfactual", data=bad,
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+        raise AssertionError("expected HTTP 400 for missing target_node")
+    except urllib.error.HTTPError as e:
+        assert e.code == 400
 
     # static dashboard
     with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as r:

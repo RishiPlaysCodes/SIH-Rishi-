@@ -9,8 +9,6 @@ the structured signals.
 
 from __future__ import annotations
 
-from typing import List
-
 from sentinelx.analytics.counterfactual import CounterfactualResult
 from sentinelx.analytics.propagation import PropagationEvent
 
@@ -21,7 +19,7 @@ def _clock(window_start: float) -> str:
 
 
 def narrate_deviation(
-    window_start: float, node_key: str, score: float, top_features: List[str], mitre_stage: str
+    window_start: float, node_key: str, score: float, top_features: list[str], mitre_stage: str
 ) -> str:
     feats = ", ".join(top_features) if top_features else "multiple signals"
     return (

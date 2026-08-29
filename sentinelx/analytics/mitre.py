@@ -8,8 +8,6 @@ detector and makes no security determination on its own.
 
 from __future__ import annotations
 
-from typing import List
-
 # Ordered by kill-chain progression; earlier = earlier stage.
 ATTACK_STAGES = [
     "Reconnaissance",
@@ -37,7 +35,7 @@ _FEATURE_TO_STAGE = {
 }
 
 
-def map_mitre_stage(top_features: List[str]) -> str:
+def map_mitre_stage(top_features: list[str]) -> str:
     """Map ranked contributing feature names to the most advanced likely stage.
 
     Given features ordered by contribution (most first), we take the stage of

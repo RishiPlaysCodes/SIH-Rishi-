@@ -15,8 +15,8 @@ constant.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Sequence
 
 from sentinelx.forecast.deviation import saturate
 from sentinelx.graph.types import GraphState
@@ -40,15 +40,15 @@ class NoveltyScorer:
         self.unusual = unusual
         self.emerging = emerging
         self.unknown = unknown
-        self._train_embeddings: List[List[float]] = []
+        self._train_embeddings: list[list[float]] = []
         self._dist_scale = 1.0
         self._fitted = False
 
-    def fit(self, train_graphs: Sequence[GraphState]) -> "NoveltyScorer":
+    def fit(self, train_graphs: Sequence[GraphState]) -> NoveltyScorer:
         self._train_embeddings = [g.embedding() for g in train_graphs if g.node_count() > 0]
         # Calibrate the distance scale to the mean nearest-neighbour distance
         # among training embeddings (the natural spread of "normal").
-        nn: List[float] = []
+        nn: list[float] = []
         for i, e in enumerate(self._train_embeddings):
             best = None
             for j, o in enumerate(self._train_embeddings):
@@ -63,7 +63,7 @@ class NoveltyScorer:
         self._fitted = True
         return self
 
-    def _nearest_distance(self, emb: List[float]) -> float:
+    def _nearest_distance(self, emb: list[float]) -> float:
         if not self._train_embeddings:
             return 0.0
         return min(euclidean(emb, e) for e in self._train_embeddings)

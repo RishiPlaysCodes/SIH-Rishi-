@@ -15,8 +15,8 @@ via directed reachability weighted by predicted traffic.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from sentinelx.graph.types import GraphState
 from sentinelx.models.base import WorldModel
@@ -33,9 +33,9 @@ VALID_ACTIONS = {
 @dataclass
 class Intervention:
     action_type: str
-    target_node: Optional[str] = None
-    target_edge: Optional[Tuple[str, str]] = None
-    port: Optional[int] = None
+    target_node: str | None = None
+    target_edge: tuple[str, str] | None = None
+    port: int | None = None
     rate_factor: float = 0.2  # RATE_LIMIT: fraction of traffic retained
 
     def __post_init__(self):
@@ -43,6 +43,17 @@ class Intervention:
             raise ValueError(
                 f"Unknown action_type={self.action_type!r}. Valid: {sorted(VALID_ACTIONS)}"
             )
+        # Reject interventions missing the parameter they operate on, so an
+        # under-specified request fails loudly instead of silently returning a
+        # misleading "no effect" (ΔRisk = 0) result.
+        if self.action_type in ("ISOLATE_NODE", "DISABLE_COMMUNICATION", "RATE_LIMIT") and not self.target_node:
+            raise ValueError(f"{self.action_type} requires 'target_node'")
+        if self.action_type == "BLOCK_EDGE" and (not self.target_edge or len(self.target_edge) != 2):
+            raise ValueError("BLOCK_EDGE requires 'target_edge' as [src, dst]")
+        if self.action_type == "BLOCK_PORT" and self.port is None:
+            raise ValueError("BLOCK_PORT requires 'port'")
+        if self.action_type == "RATE_LIMIT" and not (0.0 <= self.rate_factor <= 1.0):
+            raise ValueError("RATE_LIMIT 'rate_factor' must be in [0, 1]")
 
 
 @dataclass
@@ -52,8 +63,8 @@ class CounterfactualResult:
     risk_before: float
     risk_after: float
     delta_risk: float
-    components_before: Dict[str, float] = field(default_factory=dict)
-    components_after: Dict[str, float] = field(default_factory=dict)
+    components_before: dict[str, float] = field(default_factory=dict)
+    components_after: dict[str, float] = field(default_factory=dict)
 
 
 def apply_intervention(graph: GraphState, iv: Intervention) -> GraphState:
@@ -82,11 +93,11 @@ def apply_intervention(graph: GraphState, iv: Intervention) -> GraphState:
     return g
 
 
-def _reachable(graph: GraphState, sources: Set[str]) -> Set[str]:
+def _reachable(graph: GraphState, sources: set[str]) -> set[str]:
     """Directed BFS reachable set from ``sources`` (excluding the sources)."""
     adj = graph.adjacency()
-    seen: Set[str] = set()
-    frontier: List[str] = [s for s in sources if s in graph.nodes]
+    seen: set[str] = set()
+    frontier: list[str] = [s for s in sources if s in graph.nodes]
     while frontier:
         cur = frontier.pop()
         for nxt in adj.get(cur, []):
@@ -96,7 +107,7 @@ def _reachable(graph: GraphState, sources: Set[str]) -> Set[str]:
     return seen - set(sources)
 
 
-def compute_risk(graph: GraphState, compromised: Set[str]) -> Dict[str, float]:
+def compute_risk(graph: GraphState, compromised: set[str]) -> dict[str, float]:
     """Structural risk components in [0, 1] for a (forecasted) graph."""
     servers = set(graph.server_keys())
     total_nodes = max(graph.node_count() - len(compromised), 1)

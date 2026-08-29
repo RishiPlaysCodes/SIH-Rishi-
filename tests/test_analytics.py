@@ -62,7 +62,7 @@ def test_uncertainty_requires_multiple_passes(graph_sequence):
 
 
 def test_novelty_attack_more_novel_than_benign(graph_sequence):
-    graphs, model, engine, dev_by, split = _scored(graph_sequence)
+    graphs, _, _, dev_by, split = _scored(graph_sequence)
     scorer = NoveltyScorer().fit([graphs[i] for i in split.train_indices])
     benign = scorer.score(graphs[10], dev_by[10].graph_score, 0.1)
     attack = scorer.score(graphs[38], dev_by[38].graph_score, 0.5)
@@ -77,7 +77,7 @@ def test_stability_is_bounded(graph_sequence):
 
 
 def test_counterfactual_isolate_reduces_risk_early(graph_sequence):
-    graphs, model, engine, dev_by, _ = _scored(graph_sequence)
+    graphs, model, _, dev_by, _ = _scored(graph_sequence)
     # find first window with exactly one anomalous node
     target_win = None
     for idx in range(30, 40):
@@ -107,6 +107,27 @@ def test_apply_intervention_isolate_removes_node(graph_sequence):
 def test_invalid_action_raises():
     with pytest.raises(ValueError):
         Intervention("NUKE_EVERYTHING")
+
+
+def test_intervention_requires_its_parameters():
+    # each action must reject a request missing the thing it operates on,
+    # rather than silently returning a misleading "no effect" result.
+    with pytest.raises(ValueError):
+        Intervention("ISOLATE_NODE")  # no target_node
+    with pytest.raises(ValueError):
+        Intervention("DISABLE_COMMUNICATION")
+    with pytest.raises(ValueError):
+        Intervention("RATE_LIMIT")
+    with pytest.raises(ValueError):
+        Intervention("BLOCK_EDGE")  # no target_edge
+    with pytest.raises(ValueError):
+        Intervention("BLOCK_PORT")  # no port
+    with pytest.raises(ValueError):
+        Intervention("RATE_LIMIT", target_node="HOST-01", rate_factor=2.0)  # out of range
+    # valid forms do not raise
+    Intervention("ISOLATE_NODE", target_node="HOST-01")
+    Intervention("BLOCK_EDGE", target_edge=("a", "b"))
+    Intervention("BLOCK_PORT", port=445)
 
 
 def test_mitre_mapping():
