@@ -21,6 +21,16 @@ For any moment it answers four questions at once:
 
 ---
 
+## 📚 Learn the whole thing from zero
+
+New to graphs, machine learning, or web development? Start with the
+**[complete learning documentation in `docs/`](docs/README.md)** — a
+teach-from-scratch handbook that explains every concept, every technology, and
+every file line by line, so a beginner can read it once and rebuild the project
+themselves. Deployment steps live in **[DEPLOY.md](DEPLOY.md)**.
+
+---
+
 ## ⚠️ Read this first: what runs now vs. the framework swap-in
 
 This repository was built and verified inside an **offline sandbox** with no
