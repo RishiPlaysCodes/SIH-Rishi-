@@ -70,10 +70,14 @@ def main(argv: list[str] | None = None) -> int:
         # Deployment-friendly binding: honour $PORT/$HOST (Render, Railway,
         # Fly, Cloud Run, Hugging Face Spaces, etc.) and default to 0.0.0.0 so
         # the service is reachable, falling back to the config for local runs.
+        # Port precedence: explicit flag > common PaaS env vars > config.
+        #   PORT                        -> Render, Railway, Heroku, Fly, Cloud Run
+        #   X_ZOHO_CATALYST_LISTEN_PORT -> Zoho Catalyst AppSail
+        env_port = os.environ.get("PORT") or os.environ.get("X_ZOHO_CATALYST_LISTEN_PORT")
         host = args.host or os.environ.get("HOST") or (
-            "0.0.0.0" if os.environ.get("PORT") else service.config.get("api.host", "127.0.0.1")
+            "0.0.0.0" if env_port else service.config.get("api.host", "127.0.0.1")
         )
-        port = args.port or int(os.environ.get("PORT") or service.config.get("api.port", 8787))
+        port = args.port or int(env_port or service.config.get("api.port", 8787))
         serve(service, host=host, port=port)
         return 0
 

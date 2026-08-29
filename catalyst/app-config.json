@@ -1,0 +1,8 @@
+{
+  "command": "python -m sentinelx.cli serve",
+  "stack": "python3.11",
+  "name": "sentinel-x",
+  "buildFiles": ["."],
+  "memory": 256,
+  "env_variables": {}
+}

@@ -43,6 +43,41 @@ Uses the included `Dockerfile`.
 
 ---
 
+## Option B2 — Zoho Catalyst (AppSail)
+
+The app is already Catalyst-ready: it listens on Catalyst's
+`X_ZOHO_CATALYST_LISTEN_PORT`, and because Catalyst blocks writes in the app
+directory, the SQLite DB **automatically falls back to the OS temp dir** — so
+there's nothing to reconfigure.
+
+1. Install the CLI and log in:
+   ```bash
+   npm install -g zcatalyst-cli
+   catalyst login
+   ```
+2. From the repo root, initialise an AppSail service:
+   ```bash
+   catalyst init          # choose: AppSail
+   catalyst appsail:init  # stack: Python 3.11
+   ```
+   When prompted, use these values (also captured in `catalyst/app-config.json`):
+   - **Stack:** `python3.11`
+   - **Startup command:** `python -m sentinelx.cli serve`
+   - **Build directory / files:** the repo root (`.`)
+   - **Port:** leave default `9000` (the app reads it from
+     `X_ZOHO_CATALYST_LISTEN_PORT` automatically)
+3. Deploy:
+   ```bash
+   catalyst deploy
+   ```
+4. Open the AppSail service URL from the Catalyst console.
+
+> **Cost note (be aware):** Catalyst's free tier gives a full dev environment
+> plus wallet credits, but AppSail bills for **instance uptime**, so a 24/7
+> service gradually consumes those credits — it is *not* free indefinitely the
+> way Render's free tier is. Perfect for a hackathon/demo window; for
+> always-on-forever-free, prefer Render (Option A) and accept its idle sleep.
+
 ## Option C — Railway / Fly.io / Google Cloud Run
 
 - **Railway**: New Project → Deploy from GitHub repo. It uses the `Procfile`.
